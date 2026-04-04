@@ -22,11 +22,13 @@ import {
   Building2,
   Shield,
   Users,
-  Wrench
+  Wrench,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/hooks/useStore';
+import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/types';
 
 interface MenuItem {
@@ -64,6 +66,7 @@ const managementMenuItems: MenuItem[] = [
 
 export function Sidebar() {
   const { currentUser, currentView, setCurrentView, setSelectedRequestId, setSelectedTaskId, approvals, requests } = useStore();
+  const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -244,8 +247,15 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-2 border-t border-border/50 flex-shrink-0">
-        <div className="px-3 py-2 text-xs text-muted-foreground text-center">
+      <div className="p-2 border-t border-border/50 flex-shrink-0 space-y-1">
+        <button
+          onClick={() => signOut()}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <span className="flex-1 text-left">Çıkış Yap</span>
+        </button>
+        <div className="px-3 py-1 text-xs text-muted-foreground text-center">
           HMTRMS v1.0
         </div>
       </div>
