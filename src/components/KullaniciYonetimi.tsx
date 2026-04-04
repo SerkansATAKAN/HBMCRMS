@@ -21,7 +21,8 @@ import {
   Star,
   Award,
   Mail,
-  Send
+  Send,
+  KeyRound
 } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 import { supabase } from '@/lib/supabaseClient';
@@ -281,6 +282,14 @@ export function KullaniciYonetimi() {
     syncToStore(users.map(u => u.id === userId ? { ...u, isActive: newActive } : u));
   };
 
+  const handlePasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://hbmcrms.vercel.app',
+    });
+    if (error) { toast.error('Şifre sıfırlama e-postası gönderilemedi'); return; }
+    toast.success(`${email} adresine şifre sıfırlama e-postası gönderildi`);
+  };
+
   const getRoleLabel = (role: UserRole) => {
     return ROLES.find(r => r.code === role)?.label || role;
   };
@@ -428,7 +437,7 @@ export function KullaniciYonetimi() {
 
               {/* Actions — sadece admin/gm görebilir */}
               {isAdminOrGm && (
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex gap-2 flex-wrap">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
                     <Edit2 className="w-4 h-4 mr-1" />
                     Düzenle
@@ -436,6 +445,10 @@ export function KullaniciYonetimi() {
                   <Button size="sm" variant="outline" onClick={() => handleToggleActive(user.id)}>
                     {user.isActive ? <XCircle className="w-4 h-4 mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
                     {user.isActive ? 'Pasif' : 'Aktif'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handlePasswordReset(user.email)} title="Şifre sıfırlama e-postası gönder">
+                    <KeyRound className="w-4 h-4 mr-1" />
+                    Şifre Sıfırla
                   </Button>
                   {confirmDeleteId === user.id ? (
                     <div className="flex items-center gap-1">

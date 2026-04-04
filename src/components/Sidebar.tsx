@@ -23,12 +23,18 @@ import {
   Shield,
   Users,
   Wrench,
-  LogOut
+  LogOut,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useStore } from '@/hooks/useStore';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabaseClient';
+import { toast } from 'sonner';
 import type { UserRole } from '@/types';
 
 interface MenuItem {
@@ -68,6 +74,33 @@ export function Sidebar() {
   const { currentUser, currentView, setCurrentView, setSelectedRequestId, setSelectedTaskId, approvals, requests } = useStore();
   const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    if (!passwordForm.current) { setPasswordError('Mevcut şifrenizi girin'); return; }
+    if (passwordForm.next.length < 6) { setPasswordError('Yeni şifre en az 6 karakter olmalıdır'); return; }
+    if (passwordForm.next !== passwordForm.confirm) { setPasswordError('Yeni şifreler eşleşmiyor'); return; }
+    setPasswordSaving(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: currentUser.email,
+      password: passwordForm.current,
+    });
+    if (signInError) {
+      setPasswordError('Mevcut şifre yanlış. Şifrenizi hatırlamıyorsanız yöneticinize başvurun.');
+      setPasswordSaving(false);
+      return;
+    }
+    const { error: updateError } = await supabase.auth.updateUser({ password: passwordForm.next });
+    setPasswordSaving(false);
+    if (updateError) { setPasswordError(updateError.message); return; }
+    setShowPasswordDialog(false);
+    setPasswordForm({ current: '', next: '', confirm: '' });
+    toast.success('Şifreniz başarıyla güncellendi');
+  };
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile screen
@@ -249,6 +282,13 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-2 border-t border-border/50 flex-shrink-0 space-y-1">
         <button
+          onClick={() => { setPasswordError(''); setPasswordForm({ current: '', next: '', confirm: '' }); setShowPasswordDialog(true); }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
+        >
+          <Lock className="w-5 h-5 flex-shrink-0" />
+          <span className="flex-1 text-left">Şifre Değiştir</span>
+        </button>
+        <button
           onClick={() => signOut()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
         >
@@ -259,6 +299,62 @@ export function Sidebar() {
           HMTRMS v1.0
         </div>
       </div>
+
+      {/* Şifre Değiştir Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Şifre Değiştir
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <Label className="text-sm font-medium">Mevcut Şifre</Label>
+              <Input
+                type="password"
+                placeholder="Mevcut şifreniz"
+                value={passwordForm.current}
+                onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Yeni Şifre</Label>
+              <Input
+                type="password"
+                placeholder="En az 6 karakter"
+                value={passwordForm.next}
+                onChange={(e) => setPasswordForm({ ...passwordForm, next: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Yeni Şifre (Tekrar)</Label>
+              <Input
+                type="password"
+                placeholder="Yeni şifrenizi tekrar girin"
+                value={passwordForm.confirm}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                className="mt-1"
+                onKeyDown={(e) => e.key === 'Enter' && handlePasswordChange()}
+              />
+            </div>
+            {passwordError && (
+              <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{passwordError}</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowPasswordDialog(false)} disabled={passwordSaving}>
+                İptal
+              </Button>
+              <Button className="flex-1" onClick={handlePasswordChange} disabled={passwordSaving}>
+                {passwordSaving ? 'Kaydediliyor...' : 'Güncelle'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
