@@ -159,6 +159,18 @@ export function KullaniciYonetimi() {
 
     try {
       if (editingUser) {
+        // Rol değişimi sadece admin/gm yapabilir
+        if (editingUser.role !== formData.role && !isAdminOrGm) {
+          toast.error('Rol değiştirme yetkiniz yok');
+          setSaving(false);
+          return;
+        }
+        // Kendi rolünü yükseltme koruması: sadece admin başka birini admin yapabilir
+        if (formData.role === 'admin' && currentUser?.role !== 'admin') {
+          toast.error('Sistem Yöneticisi rolü atama yetkiniz yok');
+          setSaving(false);
+          return;
+        }
         // Mevcut kullanıcıyı Supabase'de güncelle
         const { error } = await supabase.from('users').update({
           name: formData.name,
@@ -414,28 +426,30 @@ export function KullaniciYonetimi() {
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="mt-4 flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
-                  <Edit2 className="w-4 h-4 mr-1" />
-                  Düzenle
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleToggleActive(user.id)}>
-                  {user.isActive ? <XCircle className="w-4 h-4 mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
-                  {user.isActive ? 'Pasif' : 'Aktif'}
-                </Button>
-                {confirmDeleteId === user.id ? (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-red-600 font-medium">Emin misiniz?</span>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Evet</Button>
-                    <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Hayır</Button>
-                  </div>
-                ) : (
-                  <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(user.id)}>
-                    <Trash2 className="w-4 h-4" />
+              {/* Actions — sadece admin/gm görebilir */}
+              {isAdminOrGm && (
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
+                    <Edit2 className="w-4 h-4 mr-1" />
+                    Düzenle
                   </Button>
-                )}
-              </div>
+                  <Button size="sm" variant="outline" onClick={() => handleToggleActive(user.id)}>
+                    {user.isActive ? <XCircle className="w-4 h-4 mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                    {user.isActive ? 'Pasif' : 'Aktif'}
+                  </Button>
+                  {confirmDeleteId === user.id ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-red-600 font-medium">Emin misiniz?</span>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Evet</Button>
+                      <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Hayır</Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(user.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -550,7 +564,8 @@ export function KullaniciYonetimi() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                    className="w-full h-10 px-3 rounded-lg border border-border/50 bg-background text-sm"
+                    disabled={!isAdminOrGm}
+                    className="w-full h-10 px-3 rounded-lg border border-border/50 bg-background text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {ROLES.map(r => (
                       <option key={r.code} value={r.code}>{r.label}</option>
