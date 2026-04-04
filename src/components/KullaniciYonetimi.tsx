@@ -131,7 +131,7 @@ export function KullaniciYonetimi() {
       bio: (u as ExtendedUser).bio || '',
       avatarUrl: (u as ExtendedUser).avatarUrl || '',
       maxConcurrentTasks: (u as ExtendedUser).maxConcurrentTasks || 5,
-      workTypeMappings: (u as ExtendedUser).workTypeMappings || [],
+      workTypeMappings: (u as unknown as { workTypeMappings?: unknown[] }).workTypeMappings || [],
       createdAt: (u as ExtendedUser).createdAt || now,
       updatedAt: (u as ExtendedUser).updatedAt || now,
     }));
@@ -167,8 +167,8 @@ export function KullaniciYonetimi() {
           email: formData.email,
           role: formData.role,
           department: formData.department,
-          phone: (formData as ExtendedUser).phone || null,
-          title: (formData as ExtendedUser).title || null,
+          phone: formData.phone || null,
+          title: formData.title || null,
           is_active: formData.isActive,
         }).eq('id', editingUser.id);
 
@@ -199,8 +199,8 @@ export function KullaniciYonetimi() {
               name: formData.name,
               role: formData.role,
               department: formData.department,
-              title: (formData as ExtendedUser).title || undefined,
-              phone: (formData as ExtendedUser).phone || undefined,
+              title: formData.title || undefined,
+              phone: formData.phone || undefined,
             }),
           }
         );
@@ -259,7 +259,7 @@ export function KullaniciYonetimi() {
       avatarUrl: user.avatarUrl || '',
       maxConcurrentTasks: user.maxConcurrentTasks || 5,
       isActive: user.isActive,
-      workTypeMappings: user.workTypeMappings || [],
+      workTypeMappings: (user as unknown as { workTypeMappings?: typeof formData.workTypeMappings }).workTypeMappings || [],
     });
     setActiveTab('info');
     setShowDialog(true);
