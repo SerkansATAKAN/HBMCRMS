@@ -24,7 +24,6 @@ import {
   Send
 } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import type { ExtendedUser, UserRole, Department } from '@/types';
@@ -96,7 +95,6 @@ function getInitials(name: string): string {
 
 export function KullaniciYonetimi() {
   const { users: storeUsers, updateUsers, currentUser } = useStore();
-  const { session } = useAuth();
   const [users, setUsersLocal] = useState<ExtendedUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
@@ -181,32 +179,19 @@ export function KullaniciYonetimi() {
         toast.success('Kullanıcı güncellendi');
       } else {
         // Yeni kullanıcı → invite-user Edge Function
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const token = currentSession?.access_token ?? session?.access_token;
-        if (!token) throw new Error('Oturum bulunamadı');
+        const { data, error: fnError } = await supabase.functions.invoke('invite-user', {
+          body: {
+            email: formData.email,
+            name: formData.name,
+            role: formData.role,
+            department: formData.department,
+            title: formData.title || undefined,
+            phone: formData.phone || undefined,
+          },
+        });
 
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              name: formData.name,
-              role: formData.role,
-              department: formData.department,
-              title: formData.title || undefined,
-              phone: formData.phone || undefined,
-            }),
-          }
-        );
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || 'Hata oluştu');
+        if (fnError) throw new Error(fnError.message);
+        if (data?.error) throw new Error(data.error);
 
         // Yerel listeye ekle (Supabase'deki kayıt Edge Function tarafından oluşturuldu)
         const newUser: ExtendedUser = {
