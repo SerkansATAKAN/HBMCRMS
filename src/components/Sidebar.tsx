@@ -74,6 +74,7 @@ export function Sidebar() {
   const { currentUser, currentView, setCurrentView, setSelectedRequestId, setSelectedTaskId, approvals, requests } = useStore();
   const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
   const [passwordError, setPasswordError] = useState('');
@@ -246,26 +247,30 @@ export function Sidebar() {
           );
         })}
 
-        {/* Yönetim Menüsü */}
-        {visibleManagementItems.length > 0 && (
-          <>
-            <div className="pt-4 pb-2">
-              <div className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Yönetim
-              </div>
-            </div>
+        {/* Yönetim Menüsü — başlık herkes tarafından görülür, içerik role göre */}
+        <div className="pt-3">
+          <button
+            onClick={() => setIsManagementOpen(prev => !prev)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-secondary hover:text-foreground transition-all duration-200"
+          >
+            <span>Yönetim</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isManagementOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        {isManagementOpen && (
+          <div className="space-y-0.5">
             {visibleManagementItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
-              
               return (
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   className={`
                     w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+                    ${isActive
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                     }
                   `}
@@ -275,19 +280,21 @@ export function Sidebar() {
                 </button>
               );
             })}
-          </>
+
+            {/* Şifre Değiştir — herkes görür */}
+            <button
+              onClick={() => { setPasswordError(''); setPasswordForm({ current: '', next: '', confirm: '' }); setShowPasswordDialog(true); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
+            >
+              <Lock className="w-5 h-5 flex-shrink-0" />
+              <span className="flex-1 text-left text-sm">Şifre Değiştir</span>
+            </button>
+          </div>
         )}
       </nav>
 
       {/* Footer */}
       <div className="p-2 border-t border-border/50 flex-shrink-0 space-y-1">
-        <button
-          onClick={() => { setPasswordError(''); setPasswordForm({ current: '', next: '', confirm: '' }); setShowPasswordDialog(true); }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
-        >
-          <Lock className="w-5 h-5 flex-shrink-0" />
-          <span className="flex-1 text-left">Şifre Değiştir</span>
-        </button>
         <button
           onClick={() => signOut()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
