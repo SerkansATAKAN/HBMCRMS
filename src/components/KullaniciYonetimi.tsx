@@ -103,8 +103,23 @@ export function KullaniciYonetimi() {
   const [activeTab, setActiveTab] = useState<'info' | 'worktypes'>('info');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const isAdminOrGm = currentUser?.role === 'admin' || currentUser?.role === 'gm';
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error('Dosya boyutu en fazla 2 MB olabilir'); return; }
+    setAvatarUploading(true);
+    const ext = file.name.split('.').pop();
+    const fileName = `${editingUser?.id ?? 'new'}_${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
+    setAvatarUploading(false);
+    if (error) { toast.error('Fotoğraf yüklenemedi: ' + error.message); return; }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
+    setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+    toast.success('Fotoğraf yüklendi');
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -181,6 +196,7 @@ export function KullaniciYonetimi() {
           phone: formData.phone || null,
           title: formData.title || null,
           is_active: formData.isActive,
+          avatar_url: formData.avatarUrl || null,
         }).eq('id', editingUser.id);
 
         if (error) throw error;
@@ -450,16 +466,19 @@ export function KullaniciYonetimi() {
                     <KeyRound className="w-4 h-4 mr-1" />
                     Şifre Sıfırla
                   </Button>
-                  {confirmDeleteId === user.id ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-red-600 font-medium">Emin misiniz?</span>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Evet</Button>
-                      <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Hayır</Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(user.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  {/* gm ve admin silinemez */}
+                  {user.role !== 'gm' && user.role !== 'admin' && (
+                    confirmDeleteId === user.id ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-red-600 font-medium">Emin misiniz?</span>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Evet</Button>
+                        <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Hayır</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="destructive" onClick={() => setConfirmDeleteId(user.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )
                   )}
                 </div>
               )}
@@ -504,7 +523,7 @@ export function KullaniciYonetimi() {
             <div className="space-y-4">
               {/* Avatar */}
               <div className="flex items-center gap-4">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl ${getAvatarColor(formData.name || 'A')}`}>
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 ${getAvatarColor(formData.name || 'A')}`}>
                   {formData.avatarUrl ? (
                     <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   ) : (
@@ -512,19 +531,28 @@ export function KullaniciYonetimi() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <Label className="form-label">Avatar URL</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="https://..."
-                      value={formData.avatarUrl}
-                      onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                      className="form-input"
-                    />
-                    <Button type="button" variant="outline" size="icon">
-                      <ImagePlus className="w-4 h-4" />
-                    </Button>
+                  <Label className="form-label">Profil Fotoğrafı</Label>
+                  <div className="flex gap-2 mt-1">
+                    <label className="flex-1 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }}
+                        disabled={avatarUploading}
+                      />
+                      <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-border/50 bg-background text-sm text-muted-foreground hover:bg-secondary transition-colors cursor-pointer">
+                        <ImagePlus className="w-4 h-4 flex-shrink-0" />
+                        <span>{avatarUploading ? 'Yükleniyor...' : 'Fotoğraf Seç'}</span>
+                      </div>
+                    </label>
+                    {formData.avatarUrl && (
+                      <Button type="button" variant="outline" size="sm" onClick={() => setFormData(prev => ({ ...prev, avatarUrl: '' }))}>
+                        Kaldır
+                      </Button>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Boş bırakılırsa baş harfler kullanılır</p>
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG veya WebP — maks. 2 MB</p>
                 </div>
               </div>
 
