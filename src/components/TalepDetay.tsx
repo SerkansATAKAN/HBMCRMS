@@ -38,6 +38,7 @@ export function TalepDetay() {
     revizeler, 
     comments, 
     users,
+    approvals,
     currentUser,
     selectedRequestId, 
     setCurrentView, 
@@ -46,6 +47,7 @@ export function TalepDetay() {
     updateTask,
     addTask,
     addComment,
+    addApproval,
     completeRequestWithDelay,
     addRevizeWithLimit,
     transferRequest
@@ -136,6 +138,38 @@ export function TalepDetay() {
         });
       });
     }
+
+    // Onay Bekliyor (APW) veya doğrudan Tamamlandı (CMP) seçildiğinde onay kaydı oluştur
+    // Daha önce bu talep için bekleyen bir onay yoksa ekle
+    if (newStatus === 'APW' || newStatus === 'CMP') {
+      const alreadyPending = approvals.some(
+        a => a.requestId === request.id && a.status === 'bekliyor'
+      );
+      if (!alreadyPending) {
+        const completedChecklist = requestTasks.length > 0
+          ? requestTasks.flatMap(t => t.checklist || []).filter(c => c.isCompleted).length
+          : 0;
+        const totalChecklist = requestTasks.length > 0
+          ? requestTasks.flatMap(t => t.checklist || []).length
+          : 0;
+
+        addApproval({
+          requestId: request.id,
+          requestNo: request.requestNo,
+          requestTitle: request.title,
+          submittedBy: currentUser.id,
+          submittedByName: currentUser.name,
+          submittedAt: now,
+          status: 'bekliyor',
+          approvalType: 'son_onay',
+          revizeCount: request.revizeCount || 0,
+          checklistCompleted: completedChecklist,
+          checklistTotal: totalChecklist,
+          deliverableNote: '',
+          deliverableUrl: '',
+        });
+      }
+    }
   };
 
   const handleAssign = () => {
@@ -212,6 +246,32 @@ export function TalepDetay() {
 
   const handleCompleteWithDelay = () => {
     completeRequestWithDelay(request.id, completeNote);
+
+    // Gecikmeli tamamlamada da onay kaydı oluştur
+    const alreadyPending = approvals.some(
+      a => a.requestId === request.id && a.status === 'bekliyor'
+    );
+    if (!alreadyPending) {
+      const now = new Date().toISOString();
+      const completedChecklist = requestTasks.flatMap(t => t.checklist || []).filter(c => c.isCompleted).length;
+      const totalChecklist = requestTasks.flatMap(t => t.checklist || []).length;
+      addApproval({
+        requestId: request.id,
+        requestNo: request.requestNo,
+        requestTitle: request.title,
+        submittedBy: currentUser.id,
+        submittedByName: currentUser.name,
+        submittedAt: now,
+        status: 'bekliyor',
+        approvalType: 'son_onay',
+        revizeCount: request.revizeCount || 0,
+        checklistCompleted: completedChecklist,
+        checklistTotal: totalChecklist,
+        deliverableNote: completeNote || '',
+        deliverableUrl: '',
+      });
+    }
+
     setShowCompleteModal(false);
     setCompleteNote('');
   };
