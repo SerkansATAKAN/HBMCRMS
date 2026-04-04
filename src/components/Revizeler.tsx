@@ -15,8 +15,8 @@ export function Revizeler() {
 
   // Filter based on user role
   const myRevizeler = revizeler.filter(r => {
-    // Admin/Yonetici/Koordinator sees all
-    if (['admin', 'yonetici', 'koordinator'].includes(currentUser.role)) {
+    // Admin/GM/Yonetici/Koordinator hepsini görür
+    if (['admin', 'gm', 'yonetici', 'koordinator'].includes(currentUser.role)) {
       return true;
     }
 

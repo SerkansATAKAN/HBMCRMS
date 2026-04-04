@@ -25,7 +25,7 @@ const isSafeUrl = (url: string): boolean => {
 };
 
 export function Onaylar() {
-  const { approvals, revizeler, tasks, updateApproval, updateRequest, addComment, currentUser } = useStore();
+  const { approvals, revizeler, tasks, updateApproval, updateRequest, addComment, addRevizeWithLimit, currentUser } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
   const [showRejectForm, setShowRejectForm] = useState<string | null>(null);
@@ -39,8 +39,24 @@ export function Onaylar() {
   };
 
   const handleReject = (approval: typeof pendingApprovals[0]) => {
+    const now = new Date().toISOString();
     updateApproval(approval.id, { status: 'reddedildi' });
-    updateRequest(approval.requestId, { status: 'RVZ' });
+
+    // Revizeler dizisine kayıt ekle (addRevizeWithLimit request durumunu da RVZ yapar)
+    addRevizeWithLimit(
+      {
+        requestId: approval.requestId,
+        source: 'yon_degisikligi',
+        reason: rejectionNote.trim() || 'Onay aşamasında iade edildi',
+        expectation: rejectionNote.trim() || 'Onaylayan tarafından belirtilen değişikliklerin yapılması',
+        requestedBy: currentUser.id,
+        requestedByName: currentUser.name,
+        requestedAt: now,
+        status: 'acik',
+      },
+      approval.requestId,
+    );
+
     if (rejectionNote.trim()) {
       addComment({
         requestId: approval.requestId,
