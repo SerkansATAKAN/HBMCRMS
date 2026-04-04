@@ -37,7 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async (email: string) => {
     try {
-      const { data } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+      const query = supabase.from('users').select('*').eq('email', email).maybeSingle()
+        .then(r => r.data);
+      const data = await Promise.race([query, timeout]);
       if (data) setCurrentUser(mapUser(data));
     } catch {
       // profil yüklenemedi, currentUser null kalır
@@ -51,6 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsPasswordSet(true);
     }
 
+    // Maksimum 6 saniye sonra spinner'ı zorla kapat
+    const authTimeout = setTimeout(() => setIsLoading(false), 6000);
+
     // Mevcut oturumu al
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
@@ -60,7 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => { /* session okunamadı */ })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        clearTimeout(authTimeout);
+        setIsLoading(false);
+      });
 
     // Auth değişikliklerini dinle
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
