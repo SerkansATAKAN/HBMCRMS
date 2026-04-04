@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+    --radius: 0.625rem;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply bg-background text-foreground;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.5;
+  }
+}
+
+/* Typography Scale - Mobile First */
+@layer components {
+  /* Page Title */
+  .page-title {
+    @apply text-xl sm:text-2xl font-bold text-foreground tracking-tight;
+  }
+  
+  /* Section Title */
+  .section-title {
+    @apply text-sm sm:text-base font-semibold text-foreground uppercase tracking-wide;
+  }
+  
+  /* Card Title */
+  .card-title {
+    @apply text-sm sm:text-base font-semibold text-foreground;
+  }
+  
+  /* Body Text */
+  .body-text {
+    @apply text-sm sm:text-base text-foreground leading-relaxed;
+  }
+  
+  /* Small Text */
+  .small-text {
+    @apply text-xs sm:text-sm text-muted-foreground;
+  }
+  
+  /* Label Text */
+  .label-text {
+    @apply text-xs sm:text-sm font-medium text-muted-foreground;
+  }
+  
+  /* Stat Number */
+  .stat-number {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold;
+  }
+  
+  /* Badge Text */
+  .badge-text {
+    @apply text-xs font-medium;
+  }
+  
+  /* Button Text */
+  .button-text {
+    @apply text-sm font-medium;
+  }
+}
+
+/* Card Styles */
+@layer components {
+  .app-card {
+    @apply bg-card border border-border/50 rounded-lg shadow-sm;
+  }
+  
+  .app-card-hover {
+    @apply bg-card border border-border/50 rounded-lg shadow-sm 
+           hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30 
+           transition-all duration-200;
+  }
+}
+
+/* List Item Styles */
+@layer components {
+  .list-item {
+    @apply flex items-center justify-between p-3 sm:p-4 
+           bg-secondary/30 rounded-lg 
+           hover:bg-secondary/50 transition-colors;
+  }
+  
+  .list-item-mobile {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between 
+           p-3 sm:p-4 gap-2 sm:gap-0
+           bg-secondary/30 rounded-lg 
+           hover:bg-secondary/50 transition-colors;
+  }
+}
+
+/* Mobile optimizations */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Form Elements */
+@layer components {
+  .form-input {
+    @apply h-10 sm:h-11 px-3 sm:px-4 
+           bg-background border border-border/50 rounded-lg 
+           text-sm sm:text-base
+           focus:ring-2 focus:ring-primary/50 focus:border-primary
+           transition-all;
+  }
+  
+  .form-label {
+    @apply block text-xs sm:text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2;
+  }
+}
+
+/* Table Styles */
+@layer components {
+  .app-table-header {
+    @apply text-xs sm:text-sm font-semibold text-muted-foreground 
+           uppercase tracking-wider;
+  }
+  
+  .app-table-cell {
+    @apply text-sm text-foreground py-3 sm:py-4;
+  }
+}
